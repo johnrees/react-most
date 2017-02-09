@@ -19,10 +19,15 @@ const TypeNsearch = (props)=>{
 }
 const log = x=>console.log(x)
 const MostTypeNSearch = connect(function(intent$){
-  let updateSink$ = intent$.filter(i=>i.type=='search')
+  let search$ = intent$.filter(i=>i.type=='search')
+                           .map(intent=>intent.value.trim())
+                           .skipRepeats()
+
+  let clearSink$ = search$.filter(query=>query.length === 0)
+                           .map(_=>state=>({results: []}))
+
+  let updateSink$ = search$.filter(query => query.length > 0)
                            .debounce(500)
-                           .map(intent=>intent.value)
-                           .filter(query=>query.length > 0)
                            .map(query=>GITHUB_SEARCH_API + query)
                            .map(url=>rest(url).then(resp=>({
                                type: 'dataUpdate',
@@ -48,6 +53,7 @@ const MostTypeNSearch = connect(function(intent$){
 
   return {
     search: value=>({type:'search',value}),
+    clearSink$,
     updateSink$,
   }
 })(TypeNsearch);
